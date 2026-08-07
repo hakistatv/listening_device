@@ -1,0 +1,9 @@
+# Name,   Type, SubType, Offset,  Size, Flags
+# Custom table for this board's 4MB flash (no OTA in use): a roomy 3MB app
+# partition so growing the firmware (SD card, e-paper, audio processing,
+# managed components like esp_codec_dev/mdns) doesn't run into the default
+# 1MB/1.5MB single-app partition limits. Offsets left blank so the build
+# system computes them.
+nvs,      data, nvs,     ,        0x6000,
+phy_init, data, phy,     ,        0x1000,
+factory,  app,  factory, ,        3M,

@@ -1,0 +1,75 @@
+name: Build firmware and publish flash page
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one Pages deployment at a time; don't cancel one that's already
+# publishing so we never end up with a half-updated page.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Builds via the espressif/idf Docker image (esp-idf v6.0.2, same
+      # version this project is developed against locally). Since
+      # sdkconfig isn't committed (see .gitignore), this regenerates it
+      # fresh from sdkconfig.defaults + `target`, same as a clean local
+      # checkout would.
+      - name: Build firmware
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v6.0.2
+          target: esp32s3
+          path: "."
+
+      # The espressif/idf container runs as root, so build/ comes out
+      # root-owned -- fix that before a later, non-Docker step tries to
+      # read it.
+      - name: Fix build/ ownership
+        run: sudo chown -R "$(id -u):$(id -g)" build
+
+      # Flash offsets in web/manifest.json (0x0, 0x8000, 0x10000) must
+      # match these three files -- see partitions.csv / the `idf.py build`
+      # output for the authoritative values if the partition table ever
+      # changes.
+      - name: Assemble flash page
+        run: |
+          set -eu
+          mkdir -p site
+          cp web/index.html site/
+          cp web/manifest.json site/
+          cp build/bootloader/bootloader.bin site/
+          cp build/partition_table/partition-table.bin site/
+          cp build/listening_device.bin site/
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

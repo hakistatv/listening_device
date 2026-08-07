@@ -1,0 +1,17 @@
+# ESP32-S3-ePaper-1.54 V1 hardware: ESP32-S3FH4R2 module
+# 4MB Flash, 2MB Quad PSRAM (integrated)
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_ESPTOOLPY_FLASHSIZE="4MB"
+
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_MODE_QUAD=y
+CONFIG_SPIRAM_TYPE_AUTO=y
+
+# esp_codec_dev: use the new (IDF 5.3+) i2c_master driver, not the legacy one
+# CONFIG_CODEC_I2C_BACKWARD_COMPATIBLE is not set
+
+# Custom partition table (partitions.csv): 3MB app partition instead of the
+# default 1MB -- the default was down to 4% free after adding SD card/FAT
+# support, and there's 4MB of flash on this board to use.
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
