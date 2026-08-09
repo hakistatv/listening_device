@@ -19,14 +19,16 @@
 
 static const char *TAG = "web_server";
 
-/* HTML pages live under main/pages/ and are embedded into the binary at
- * build time (EMBED_TXTFILES in main/CMakeLists.txt), null-terminated, so
- * they can be used directly as C strings. settings.html and
- * recordings_item.html are printf-style templates -- see their use below
- * for the placeholder meanings. The Settings page intentionally leaves the
- * password blank rather than echoing the current value back into the page
- * source. The Recordings page is assembled from several small pieces
- * (header/item/empty/footer) since its item list has a variable length. */
+/* HTML pages (and the shared style.css) live under main/pages/ and are
+ * embedded into the binary at build time (EMBED_TXTFILES in
+ * main/CMakeLists.txt), null-terminated, so they can be used directly as C
+ * strings. settings.html and recordings_item.html are printf-style
+ * templates -- see their use below for the placeholder meanings. The
+ * Settings page intentionally leaves the password blank rather than echoing
+ * the current value back into the page source. The Recordings page is
+ * assembled from several small pieces (header/item/empty/footer) since its
+ * item list has a variable length. Every page's <head> links to /style.css
+ * for consistent, mobile-sized text and buttons -- see style_get_handler. */
 extern const char home_html_start[] asm("_binary_home_html_start");
 extern const char listening_html_start[] asm("_binary_listening_html_start");
 extern const char settings_html_start[] asm("_binary_settings_html_start");
@@ -36,6 +38,7 @@ extern const char recordings_header_html_start[] asm("_binary_recordings_header_
 extern const char recordings_item_html_start[] asm("_binary_recordings_item_html_start");
 extern const char recordings_empty_html_start[] asm("_binary_recordings_empty_html_start");
 extern const char recordings_footer_html_start[] asm("_binary_recordings_footer_html_start");
+extern const char style_css_start[] asm("_binary_style_css_start");
 
 /* Decodes an application/x-www-form-urlencoded value in place: '+' -> space,
  * '%XX' -> byte XX. esp_http_server's httpd_query_key_value() only splits
@@ -124,6 +127,15 @@ static esp_err_t root_get_handler(httpd_req_t *req)
     return httpd_resp_send(req, home_html_start, HTTPD_RESP_USE_STRLEN);
 }
 
+/* Shared stylesheet every page's <head> links to -- one static file, so the
+ * browser caches it after the first page load instead of it being resent
+ * (or duplicated) per page. */
+static esp_err_t style_get_handler(httpd_req_t *req)
+{
+    httpd_resp_set_type(req, "text/css");
+    return httpd_resp_send(req, style_css_start, HTTPD_RESP_USE_STRLEN);
+}
+
 /* Builds "<p>Last recording: <a href="/download?file=...">name</a></p>", or
  * an empty string if there's no completed recording yet this boot. */
 static void build_last_recording_link(char *out, size_t out_size)
@@ -150,7 +162,11 @@ static esp_err_t listening_get_handler(httpd_req_t *req)
     char link_html[RECORDING_NAME_MAX * 6 + 64];
     build_last_recording_link(link_html, sizeof(link_html));
 
-    char page[1024];
+    /* Worst case: template (~380 bytes incl. the <head> meta/stylesheet
+     * tags) + button_label (<=6) + link_html (up to RECORDING_NAME_MAX * 6 +
+     * 64 = 832, if the last recording's filename is all HTML-escaped/
+     * percent-encoded characters) -- comfortably under 2048. */
+    char page[2048];
     int len = snprintf(page, sizeof(page), listening_html_start, button_label, link_html);
     if (len < 0 || (size_t)len >= sizeof(page)) {
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Page too large");
@@ -195,7 +211,11 @@ static esp_err_t settings_get_handler(httpd_req_t *req)
     char duration_str[11]; /* uint32_t max is 10 digits */
     snprintf(duration_str, sizeof(duration_str), "%" PRIu32, current_recording_max_duration_sec);
 
-    char page[1024];
+    /* Worst case: template (~1100 bytes incl. the <head> meta/stylesheet
+     * tags) + ssid_esc/host_esc (up to SSID_MAX_LEN/HOST_MAX_LEN * 6 + 1 =
+     * 193 each, if every character needs HTML-escaping) + duration_str
+     * (<=10) + "checked" (<=8) -- comfortably under 2048. */
+    char page[2048];
     int len = snprintf(page, sizeof(page), settings_html_start, ssid_esc, host_esc, duration_str,
                         current_stealth_mode ? "checked" : "");
     if (len < 0 || (size_t)len >= sizeof(page)) {
@@ -424,6 +444,12 @@ static const httpd_uri_t root_uri = {
     .handler = root_get_handler,
 };
 
+static const httpd_uri_t style_uri = {
+    .uri = "/style.css",
+    .method = HTTP_GET,
+    .handler = style_get_handler,
+};
+
 static const httpd_uri_t listening_get_uri = {
     .uri = "/listening",
     .method = HTTP_GET,
@@ -473,6 +499,7 @@ httpd_handle_t start_webserver(void)
     }
 
     httpd_register_uri_handler(server, &root_uri);
+    httpd_register_uri_handler(server, &style_uri);
     httpd_register_uri_handler(server, &listening_get_uri);
     httpd_register_uri_handler(server, &listening_post_uri);
     httpd_register_uri_handler(server, &settings_get_uri);

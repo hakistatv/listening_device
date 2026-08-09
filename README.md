@@ -139,7 +139,12 @@ published automatically by GitHub Actions on every push to `main`.
 1. Open **https://hakistatv.github.io/listening_device/** in **Chrome or
    Edge on desktop** (Web Serial isn't supported in Firefox/Safari, or on
    mobile browsers).
-2. Connect the board via USB.
+2. Connect the board via USB **while holding the BOOT button down** — hold
+   BOOT, plug in the USB cable, then release BOOT after a second or two.
+   This puts the ESP32-S3 into its serial bootloader (download) mode; without
+   it, the board boots straight into whatever firmware is already on it
+   instead of exposing itself for flashing, and the browser either won't see
+   a usable port or the flash will fail partway through.
 3. Click **Connect**, select the board's serial port, then click
    **Install**.
 4. Wait for the flash to finish (roughly 30s-1min); the board reboots into

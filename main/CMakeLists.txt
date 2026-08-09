@@ -8,4 +8,4 @@ idf_component_register(SRCS "recorder.c" "listening_device.c" "device_settings.c
                     EMBED_TXTFILES "pages/home.html" "pages/listening.html" "pages/settings.html" "pages/restart.html"
                                    "pages/recordings_no_card.html" "pages/recordings_header.html"
                                    "pages/recordings_item.html" "pages/recordings_empty.html"
-                                   "pages/recordings_footer.html")
+                                   "pages/recordings_footer.html" "pages/style.css")
