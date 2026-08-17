@@ -245,3 +245,14 @@ size after pulling changes, delete `sdkconfig` and rebuild so it
 regenerates from `sdkconfig.defaults` (`sdkconfig` is a local cache, not
 checked in).
 
+## Attribution
+
+This project is shared publicly for anyone to fork, learn from, and build
+on. If you use this code -- in full or in a substantial part, source or
+compiled firmware -- in your own project, please credit **Hakista TV**:
+
+- [github.com/hakistatv](https://github.com/hakistatv)
+- [youtube.com/HakistaTV](https://youtube.com/HakistaTV)
+
+A link back to this repo in your README or project description is enough.
+

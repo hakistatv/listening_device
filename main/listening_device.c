@@ -26,6 +26,7 @@
 #include "sd_card.h"
 #include "status_display.h"
 #include "web_server.h"
+#include "build_info.h"
 
 /*
  * Pinout for the Waveshare ESP32-S3-ePaper-1.54 (V1 & V2 share the same
@@ -199,6 +200,10 @@ static void wifi_init_softap(void)
 void app_main(void)
 {
     ESP_LOGI(TAG, "listening_device starting up");
+    /* Backup copy of the /origin route's provenance info (see
+     * web_server.c, build_info.h) -- keeps FW_ORIGIN_MARK in the compiled
+     * binary even if a fork strips the web server out entirely. */
+    ESP_LOGI(TAG, "%s / %s (%s)", FW_ORIGIN_AUTHOR, FW_ORIGIN_REPO, FW_ORIGIN_MARK);
 
     esp_chip_info_t chip_info;
     uint32_t flash_size;

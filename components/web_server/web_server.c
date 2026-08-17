@@ -15,6 +15,7 @@
 #include "recorder.h"
 #include "sd_card.h"
 #include "status_display.h"
+#include "build_info.h"
 #include "web_server.h"
 
 static const char *TAG = "web_server";
@@ -438,6 +439,27 @@ static esp_err_t download_get_handler(httpd_req_t *req)
     return ret;
 }
 
+/* GET /origin -- firmware provenance. Deliberately not linked from any
+ * page (Home, Listening, Settings, Recordings) so it doesn't show up in
+ * normal browsing -- see build_info.h for why this exists and what it's
+ * for. */
+static esp_err_t origin_get_handler(httpd_req_t *req)
+{
+    char body[256];
+    int len = snprintf(body, sizeof(body),
+                        "%s -- listening_device firmware\n"
+                        "Origin: %s\n"
+                        "YouTube: %s\n"
+                        "Mark: %s\n",
+                        FW_ORIGIN_AUTHOR, FW_ORIGIN_REPO, FW_ORIGIN_YT, FW_ORIGIN_MARK);
+    if (len < 0 || (size_t)len >= sizeof(body)) {
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Buffer too small");
+        return ESP_FAIL;
+    }
+    httpd_resp_set_type(req, "text/plain");
+    return httpd_resp_send(req, body, len);
+}
+
 static const httpd_uri_t root_uri = {
     .uri = "/",
     .method = HTTP_GET,
@@ -486,11 +508,21 @@ static const httpd_uri_t download_get_uri = {
     .handler = download_get_handler,
 };
 
+static const httpd_uri_t origin_uri = {
+    .uri = "/origin",
+    .method = HTTP_GET,
+    .handler = origin_get_handler,
+};
+
 httpd_handle_t start_webserver(void)
 {
     httpd_handle_t server = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.stack_size = 8192; /* recordings/download handlers' path/HTML buffers need more than the 4KB default */
+    /* root, style, listening x2, settings x2, recordings, download, origin
+     * = 9; default cap is 8 -- was exactly at that cap before /origin was
+     * added, so this now needs to be explicit. */
+    config.max_uri_handlers = 12;
 
     esp_err_t ret = httpd_start(&server, &config);
     if (ret != ESP_OK) {
@@ -506,6 +538,7 @@ httpd_handle_t start_webserver(void)
     httpd_register_uri_handler(server, &settings_post_uri);
     httpd_register_uri_handler(server, &recordings_get_uri);
     httpd_register_uri_handler(server, &download_get_uri);
+    httpd_register_uri_handler(server, &origin_uri);
     ESP_LOGI(TAG, "Web server started");
     return server;
 }
