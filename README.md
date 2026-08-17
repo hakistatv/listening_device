@@ -6,7 +6,7 @@ serves a small web page over its own Wi-Fi access point.
 
 ## Demo
 
-[Watch a walkthrough of the features on YouTube](https://youtu.be/R5Ie84ewBdo?si=l8--JXbw3XhU6gSn).
+[![Watch a walkthrough of the features on YouTube](https://img.youtube.com/vi/R5Ie84ewBdo/maxresdefault.jpg)](https://youtu.be/R5Ie84ewBdo?si=l8--JXbw3XhU6gSn)
 
 ## Hardware
 
