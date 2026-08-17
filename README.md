@@ -101,7 +101,7 @@ There are two ways to set the Wi-Fi SSID/password, device (mDNS) name, max
 recording duration, and Stealth Mode:
 
 1. **Before you build** — edit the defaults in
-   [`main/device_config.h`](main/device_config.h):
+   [`components/device_settings/device_config.h`](components/device_settings/device_config.h):
 
    ```c
    #define WIFI_AP_SSID     "hakista"
@@ -169,7 +169,8 @@ idf.py -p /dev/tty.usbmodem101 flash monitor
 
 ## Connecting to the device
 
-1. Connect your phone/laptop's Wi-Fi to the SSID set in `device_config.h`
+1. Connect your phone/laptop's Wi-Fi to the SSID set in
+   `components/device_settings/device_config.h`
    (default `hakista`), using the configured password (default `hak1sta!`).
 2. Browse to either:
    - `http://192.168.4.1/` (always works — the SoftAP's fixed gateway IP), or
@@ -185,38 +186,51 @@ phone's audio stack all agree with each other.
 
 ## Project layout
 
+Each piece besides the app entry point lives in its own ESP-IDF component
+under `components/`, with its own `CMakeLists.txt` declaring exactly what it
+requires:
+
 ```
 main/
-  listening_device.c    -- app_main, mic capture, Wi-Fi AP setup
-  device_settings.c/.h  -- runtime SSID/password/hostname/max-recording-
-                            duration/stealth-mode storage (NVS-backed)
-  mdns_service.c/.h     -- mDNS advertisement (<hostname>.local)
-  web_server.c/.h       -- HTTP server: Home, Listening (GET+POST),
-                            Settings (GET+POST), Recordings + Download, restart
-  sd_card.c/.h          -- mounts the TF/SD card, creates /sdcard/recordings
-                            and a sample WAV in it; shared wav_header_t +
-                            timestamped-filename helpers
-  recorder.c/.h         -- the one task that reads the mic stream; writes
-                            frames to a WAV file while recording is active
-  epaper.c/.h           -- SSD1681 e-paper driver (full-refresh) + a small
-                            built-in bitmap font, ported from Waveshare's demo
-  status_display.c/.h   -- single source of truth for Stop/Listening state;
-                            called from the BOOT button task AND the web
-                            Listening page, updates the e-paper screen and
-                            starts/stops recorder.c either way
-  device_config.h       -- edit Wi-Fi/mDNS defaults here before building
-  pages/                -- every page's HTML lives here (embedded into the
-                            binary at build time, see CMakeLists.txt):
-                              home.html, listening.html, settings.html,
-                              restart.html, recordings_header.html,
-                              recordings_item.html (printf template, one
-                                row per file), recordings_empty.html,
-                              recordings_footer.html, recordings_no_card.html
+  listening_device.c        -- app_main, mic capture, Wi-Fi AP setup
+  idf_component.yml         -- managed component deps (esp_codec_dev, mdns)
   CMakeLists.txt
-partitions.csv           -- custom 3MB app partition (see note below)
-sdkconfig.defaults       -- flash size (4MB), PSRAM (2MB Quad), partition
-                             table for this board
-main/idf_component.yml   -- managed component deps (esp_codec_dev, mdns)
+components/
+  device_settings/          -- runtime SSID/password/hostname/max-recording-
+    device_settings.c/.h       duration/stealth-mode storage (NVS-backed)
+    device_config.h          -- edit Wi-Fi/mDNS defaults here before building
+    CMakeLists.txt
+  mdns_service/              -- mDNS advertisement (<hostname>.local)
+    mdns_service.c/.h
+    CMakeLists.txt
+  web_server/                -- HTTP server: Home, Listening (GET+POST),
+    web_server.c/.h             Settings (GET+POST), Recordings + Download, restart
+    pages/                   -- every page's HTML lives here (embedded into
+                                  the binary at build time, see CMakeLists.txt):
+                                    home.html, listening.html, settings.html,
+                                    restart.html, recordings_header.html,
+                                    recordings_item.html (printf template, one
+                                      row per file), recordings_empty.html,
+                                    recordings_footer.html, recordings_no_card.html
+    CMakeLists.txt
+  sd_card/                    -- mounts the TF/SD card, creates /sdcard/recordings
+    sd_card.c/.h                 and a sample WAV in it; shared wav_header_t +
+                                  timestamped-filename helpers
+    CMakeLists.txt
+  recorder/                   -- the one task that reads the mic stream; writes
+    recorder.c/.h                frames to a WAV file while recording is active
+    CMakeLists.txt
+  epaper/                     -- SSD1681 e-paper driver (full-refresh) + a small
+    epaper.c/.h                  built-in bitmap font, ported from Waveshare's demo
+    CMakeLists.txt
+  status_display/             -- single source of truth for Stop/Listening state;
+    status_display.c/.h          called from the BOOT button task AND the web
+                                  Listening page, updates the e-paper screen and
+                                  starts/stops recorder either way
+    CMakeLists.txt
+partitions.csv               -- custom 3MB app partition (see note below)
+sdkconfig.defaults           -- flash size (4MB), PSRAM (2MB Quad), partition
+                                 table for this board
 ```
 
 **Partition table:** this project uses a custom `partitions.csv` (3MB app
