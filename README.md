@@ -4,6 +4,10 @@ ESP-IDF firmware for the Waveshare **ESP32-S3-ePaper-1.54** (V1: ESP32-S3FH4R2,
 4MB Flash / 2MB PSRAM). Captures mic audio via the onboard ES8311 codec and
 serves a small web page over its own Wi-Fi access point.
 
+## Demo
+
+[Watch a walkthrough of the features on YouTube](https://youtu.be/R5Ie84ewBdo?si=l8--JXbw3XhU6gSn).
+
 ## Hardware
 
 - Board: Waveshare ESP32-S3-ePaper-1.54, V1
