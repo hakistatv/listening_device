@@ -1,6 +1,6 @@
 # listening_device
 
-ESP-IDF firmware for the Waveshare **ESP32-S3-ePaper-1.54** (V1: ESP32-S3FH4R2,
+ESP-IDF firmware for the Waveshare **[ESP32-S3-ePaper-1.54](https://www.waveshare.com/esp32-s3-epaper-1.54.htm?&aff_id=HakistaTV)** (V1: ESP32-S3FH4R2,
 4MB Flash / 2MB PSRAM). Captures mic audio via the onboard ES8311 codec and
 serves a small web page over its own Wi-Fi access point.
 
@@ -10,7 +10,7 @@ serves a small web page over its own Wi-Fi access point.
 
 ## Hardware
 
-- Board: Waveshare ESP32-S3-ePaper-1.54, V1
+- Board: [Waveshare ESP32-S3-ePaper-1.54, V1](https://www.waveshare.com/esp32-s3-epaper-1.54.htm?&aff_id=HakistaTV)
 - Docs: https://docs.waveshare.com/ESP32-S3-ePaper-1.54 (no pinout table there
   — the pin map below came from Waveshare's own ESP-IDF demo repo,
   `github.com/waveshareteam/ESP32-S3-ePaper-1.54`,
